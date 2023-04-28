@@ -1,0 +1,53 @@
+plugins {
+    id 'groovy'
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+project.ext {
+    jaxbTargetDir = file("src/generated/java")
+}
+
+configurations {
+    xsd2java
+}
+
+dependencies {
+    implementation 'org.codehaus.groovy:groovy-all:3.0.5'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
+    xsd2java "com.sun.xml.bind:jaxb-xjc:3.0.2"
+    xsd2java "com.sun.xml.bind:jaxb-impl:3.0.2"
+    xsd2java "com.sun.xml.bind:jaxb-core:3.0.2"
+    xsd2java "com.sun.activation:jakarta.activation:2.0.1"
+    xsd2java "jakarta.xml.bind:jakarta.xml.bind-api:3.0.1"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task xsd2java() {
+    doLast {
+        jaxbTargetDir.mkdirs()
+
+        ant.taskdef(name: 'xjc', classname: 'com.sun.tools.xjc.XJCTask', classpath: configurations.xsd2java.asPath)
+        ant.jaxbTargetDir = jaxbTargetDir
+
+        ant.xjc( // для генерации pojo
+                destdir: '${jaxbTargetDir}',
+                package: 'dk.myproject.domain.service.request',
+                schema: 'src/file.xsd'
+        )
+    }
+}
+
+
+compileJava.dependsOn xsd2java
